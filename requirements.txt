@@ -1,0 +1,4 @@
+flask==3.0.3
+twilio==9.3.3
+supabase==2.4.6
+gunicorn==22.0.0
