@@ -90,7 +90,7 @@ def webhook():
             else:
                 msg.body("No tenés turnos activos.\n\nEscribí *sacar turno* para reservar uno.")
         else:
-            msg.body("¡Hola! 👋 ¿En qué te puedo ayudar?\n\n1️⃣ Sacar turno\n2️⃣ Cancelar turno\n3️⃣ Ver mis turnos")
+            msg.body("¡Hola! 👋 ¿En qué te puedo ayudar?\n\n1. Sacar turno\n2. Cancelar turno\n3. Ver mis turnos")
 
     # ── ASKING_NAME ───────────────────────────────────────────
     elif sess["step"] == "asking_name":
@@ -100,7 +100,7 @@ def webhook():
             msg.body("Lo siento, no hay turnos disponibles por el momento. Intentá más tarde.")
             sessions[phone] = {"step": "idle"}
         else:
-            lines = "\n".join([f"{i+1}️⃣ {s['fecha']} a las {s['hora']}" for i, s in enumerate(slots)])
+            lines = "\n".join([f"{i+1}. {s['fecha']} a las {s['hora']}" for i, s in enumerate(slots)])
             sessions[phone]["slots"] = slots
             msg.body(f"¡Hola {incoming}! 😊\n\nEstos turnos están disponibles:\n\n{lines}\n\n¿Cuál preferís? Respondé con el número.")
 
@@ -119,7 +119,7 @@ def webhook():
             )
         except (ValueError, IndexError):
             slots = sess.get("slots", [])
-            lines = "\n".join([f"{i+1}️⃣ {s['fecha']} a las {s['hora']}" for i, s in enumerate(slots)])
+            lines = "\n".join([f"{i+1}. {s['fecha']} a las {s['hora']}" for i, s in enumerate(slots)])
             msg.body(f"Por favor respondé con un número del 1 al {len(slots)}:\n\n{lines}")
 
     # ── CANCEL ────────────────────────────────────────────────
@@ -133,7 +133,7 @@ def webhook():
 
     else:
         sessions[phone] = {"step": "idle"}
-        msg.body("¿En qué te puedo ayudar?\n\n1️⃣ Sacar turno\n2️⃣ Cancelar turno\n3️⃣ Ver mis turnos")
+        msg.body("¿En qué te puedo ayudar?\n\n1. Sacar turno\n2. Cancelar turno\n3. Ver mis turnos")
 
     return str(resp)
 
