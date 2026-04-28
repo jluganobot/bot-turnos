@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Portal Médico — Dr. Cristian Alvarez</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --cream: #F7F3EE;
+      --ink: #1A1612;
+      --ink-soft: #4A4540;
+      --ink-faint: #9A9590;
+      --green: #2D6A4F;
+      --green-light: #E8F5EE;
+      --amber: #B5620A;
+      --amber-light: #FDF0E0;
+      --red: #C0392B;
+      --red-light: #FDECEA;
+      --border: #E2DBD3;
+      --white: #FFFFFF;
+      --shadow: 0 2px 12px rgba(26,22,18,0.08);
+      --shadow-lg: 0 8px 32px rgba(26,22,18,0.12);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--cream);
+      color: var(--ink);
+      min-height: 100vh;
+    }
+
+    /* LOGIN */
+    #login-screen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--ink);
+      background-image: radial-gradient(ellipse at 20% 50%, #2D3A2E 0%, transparent 60%),
+                        radial-gradient(ellipse at 80% 20%, #2A2218 0%, transparent 50%);
+    }
+
+    .login-card {
+      background: var(--white);
+      border-radius: 20px;
+      padding: 48px 40px;
+      width: 360px;
+      box-shadow: var(--shadow-lg);
+      text-align: center;
+    }
+
+    .login-logo {
+      width: 56px;
+      height: 56px;
+      background: var(--green);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 24px;
+    }
+
+    .login-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: 22px;
+      color: var(--ink);
+      margin-bottom: 4px;
+    }
+
+    .login-sub {
+      font-size: 13px;
+      color: var(--ink-faint);
+      margin-bottom: 32px;
+    }
+
+    .login-input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-size: 15px;
+      font-family: 'DM Sans', sans-serif;
+      color: var(--ink);
+      background: var(--cream);
+      outline: none;
+      transition: border-color 0.2s;
+      margin-bottom: 12px;
+      text-align: center;
+      letter-spacing: 3px;
+    }
+
+    .login-input:focus { border-color: var(--green); }
+
+    .login-btn {
+      width: 100%;
+      padding: 13px;
+      background: var(--green);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 500;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .login-btn:hover { opacity: 0.88; }
+    .login-error { color: var(--red); font-size: 12px; margin-top: 8px; }
+
+    /* PORTAL */
+    #portal-screen { display: none; }
+
+    .topbar {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .topbar-left { display: flex; align-items: center; gap: 14px; }
+
+    .topbar-logo {
+      width: 38px;
+      height: 38px;
+      background: var(--green);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .topbar-name {
+      font-family: 'DM Serif Display', serif;
+      font-size: 18px;
+      color: var(--ink);
+      line-height: 1.2;
+    }
+
+    .topbar-spec {
+      font-size: 12px;
+      color: var(--ink-faint);
+    }
+
+    .topbar-right { display: flex; align-items: center; gap: 16px; }
+
+    .live-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--green-light);
+      color: var(--green);
+      font-size: 12px;
+      font-weight: 500;
+      padding: 5px 12px;
+      border-radius: 20px;
+    }
+
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      background: var(--green);
+      border-radius: 50%;
+      animation: blink 1.4s infinite;
+    }
+
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    .logout-btn {
+      font-size: 13px;
+      color: var(--ink-faint);
+      background: none;
+      border: 1px solid var(--border);
+      padding: 6px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    .logout-btn:hover { color: var(--ink); border-color: var(--ink-soft); }
+
+    /* STATS BAR */
+    .stats-bar {
+      display: flex;
+      gap: 12px;
+      padding: 20px 32px;
+    }
+
+    .stat-card {
+      flex: 1;
+      background: var(--white);
+      border-radius: 14px;
+      padding: 18px 20px;
+      border: 1px solid var(--border);
+    }
+
+    .stat-num {
+      font-family: 'DM Serif Display', serif;
+      font-size: 32px;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+
+    .stat-label { font-size: 12px; color: var(--ink-faint); }
+    .stat-green .stat-num { color: var(--green); }
+    .stat-amber .stat-num { color: var(--amber); }
+    .stat-red .stat-num { color: var(--red); }
+    .stat-ink .stat-num { color: var(--ink); }
+
+    /* MAIN CONTENT */
+    .main { padding: 0 32px 40px; }
+
+    .week-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .week-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: 22px;
+      color: var(--ink);
+    }
+
+    .refresh-info {
+      font-size: 12px;
+      color: var(--ink-faint);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* DAY COLUMNS */
+    .days-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .day-col {
+      background: var(--white);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    .day-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .day-name {
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--ink);
+    }
+
+    .day-date { font-size: 12px; color: var(--ink-faint); }
+
+    .day-count {
+      font-size: 11px;
+      background: var(--cream);
+      color: var(--ink-soft);
+      padding: 3px 9px;
+      border-radius: 20px;
+      font-weight: 500;
+    }
+
+    .day-slots { padding: 10px; }
+
+    /* SLOT CARDS */
+    .slot-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 12px;
+      border-radius: 10px;
+      margin-bottom: 7px;
+      border: 1px solid transparent;
+      transition: all 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .slot-card.libre {
+      background: var(--cream);
+      border-color: var(--border);
+    }
+
+    .slot-card.ocupado {
+      background: var(--green-light);
+      border-color: #B8DEC9;
+    }
+
+    .slot-card.cancelado {
+      background: #F8F8F8;
+      border-color: var(--border);
+      opacity: 0.6;
+    }
+
+    .slot-card.nuevo {
+      animation: nueva-reserva 2s ease;
+    }
+
+    @keyframes nueva-reserva {
+      0% { background: #FFF9C4; border-color: #F0C040; transform: scale(1.02); }
+      100% { background: var(--green-light); border-color: #B8DEC9; transform: scale(1); }
+    }
+
+    .slot-time {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--ink);
+      min-width: 40px;
+      flex-shrink: 0;
+    }
+
+    .slot-info { flex: 1; min-width: 0; }
+
+    .slot-patient {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--ink);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .slot-patient.libre-text { color: var(--ink-faint); font-weight: 400; }
+
+    .slot-via {
+      font-size: 11px;
+      color: var(--ink-faint);
+      margin-top: 1px;
+    }
+
+    .badge {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 6px;
+      flex-shrink: 0;
+      letter-spacing: 0.02em;
+    }
+
+    .badge-libre { background: var(--border); color: var(--ink-soft); }
+    .badge-wa { background: #E8F8EE; color: #1A7A3C; border: 1px solid #B8DEC9; }
+    .badge-portal { background: #E8F0FE; color: #1A56C4; }
+    .badge-cancelado { background: #F0F0F0; color: #999; }
+
+    /* NOTIF TOAST */
+    #toast {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      background: var(--ink);
+      color: white;
+      padding: 14px 20px;
+      border-radius: 12px;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: var(--shadow-lg);
+      transform: translateY(80px);
+      opacity: 0;
+      transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      z-index: 999;
+      max-width: 320px;
+    }
+
+    #toast.show { transform: translateY(0); opacity: 1; }
+
+    .toast-icon { font-size: 18px; flex-shrink: 0; }
+
+    /* INFO CARD */
+    .info-strip {
+      margin: 0 32px 20px;
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      font-size: 13px;
+      color: var(--ink-soft);
+    }
+
+    .info-item { display: flex; align-items: center; gap: 7px; }
+    .info-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid var(--border);
+      border-top-color: var(--green);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      display: inline-block;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #last-update { font-size: 11px; color: var(--ink-faint); }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">🩺</div>
+    <div class="login-title">Portal Médico</div>
+    <div class="login-sub">Dr. Cristian Alvarez — Cardiología</div>
+    <input class="login-input" type="password" id="pwd-input" placeholder="••••••" maxlength="10" />
+    <div class="login-error" id="login-error"></div>
+    <br/>
+    <button class="login-btn" onclick="tryLogin()">Ingresar</button>
+  </div>
+</div>
+
+<!-- PORTAL -->
+<div id="portal-screen">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-logo">🩺</div>
+      <div>
+        <div class="topbar-name">Dr. Cristian Alvarez</div>
+        <div class="topbar-spec">Cardiología · Clínica San Martín, Piso 3 Of. 12 · Buenos Aires</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <span class="live-pill"><span class="live-dot"></span>En vivo</span>
+      <span id="last-update"></span>
+      <button class="logout-btn" onclick="logout()">Salir</button>
+    </div>
+  </div>
+
+  <div class="stats-bar" id="stats-bar">
+    <div class="stat-card stat-ink"><div class="stat-num" id="stat-total">–</div><div class="stat-label">Turnos totales</div></div>
+    <div class="stat-card stat-green"><div class="stat-num" id="stat-libres">–</div><div class="stat-label">Disponibles</div></div>
+    <div class="stat-card stat-amber"><div class="stat-num" id="stat-ocupados">–</div><div class="stat-label">Reservados</div></div>
+    <div class="stat-card stat-red"><div class="stat-num" id="stat-cancelados">–</div><div class="stat-label">Cancelados</div></div>
+  </div>
+
+  <div class="info-strip">
+    <div class="info-item"><span class="info-dot" style="background:#B8DEC9"></span>Turno libre</div>
+    <div class="info-item"><span class="info-dot" style="background:#2D6A4F"></span>Reservado</div>
+    <div class="info-item"><span class="info-dot" style="background:#E8F8EE; border:1px solid #B8DEC9"></span>Reservado por WhatsApp</div>
+    <div class="info-item"><span class="info-dot" style="background:#E8F0FE"></span>Reservado por portal</div>
+    <div class="info-item"><span class="info-dot" style="background:#F0F0F0"></span>Cancelado</div>
+  </div>
+
+  <div class="main">
+    <div class="week-header">
+      <div class="week-title">Agenda de la semana</div>
+      <div class="refresh-info"><span class="spinner"></span> Actualizando cada 20 segundos</div>
+    </div>
+    <div class="days-grid" id="days-grid">
+      <!-- cargado por JS -->
+    </div>
+  </div>
+</div>
+
+<div id="toast">
+  <span class="toast-icon">📲</span>
+  <span id="toast-msg">Nueva reserva recibida</span>
+</div>
+
+<script>
+  const SUPABASE_URL = "https://ecigltcshlgubljjjfkt.supabase.co";
+  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVjaWdsdGNzaGxndWJsampqZmt0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyOTAxNjcsImV4cCI6MjA5Mjg2NjE2N30.z_SjeZe5mH-Nn2bQNSmyTSkbSFYN9llmCzEbgpB2eKQ";
+  const PASSWORD = "1234";
+
+  const { createClient } = supabase;
+  const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  let prevData = [];
+  let refreshInterval = null;
+
+  // ── LOGIN ─────────────────────────────────────────────────────
+  document.getElementById('pwd-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') tryLogin();
+  });
+
+  function tryLogin() {
+    const val = document.getElementById('pwd-input').value;
+    if (val === PASSWORD) {
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('portal-screen').style.display = 'block';
+      startPortal();
+    } else {
+      document.getElementById('login-error').textContent = 'Contraseña incorrecta. Intentá de nuevo.';
+      document.getElementById('pwd-input').value = '';
+    }
+  }
+
+  function logout() {
+    clearInterval(refreshInterval);
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('portal-screen').style.display = 'none';
+    document.getElementById('pwd-input').value = '';
+  }
+
+  // ── PORTAL ────────────────────────────────────────────────────
+  function startPortal() {
+    loadTurnos();
+    refreshInterval = setInterval(loadTurnos, 20000);
+  }
+
+  async function loadTurnos() {
+    const { data, error } = await db
+      .from('turnos')
+      .select('*')
+      .order('id', { ascending: true });
+
+    if (error) { console.error(error); return; }
+
+    checkForNewBookings(data);
+    renderPortal(data);
+    prevData = data;
+
+    const now = new Date();
+    document.getElementById('last-update').textContent =
+      `Última actualización: ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+  }
+
+  function checkForNewBookings(newData) {
+    if (!prevData.length) return;
+    newData.forEach(slot => {
+      const prev = prevData.find(p => p.id === slot.id);
+      if (prev && prev.estado === 'libre' && slot.estado === 'ocupado') {
+        showToast(`📲 Nueva reserva: ${slot.paciente} — ${slot.fecha} ${slot.hora}`);
+      }
+      if (prev && prev.estado === 'ocupado' && slot.estado === 'cancelado') {
+        showToast(`❌ Cancelación: ${slot.paciente} — ${slot.fecha} ${slot.hora}`);
+      }
+    });
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    document.getElementById('toast-msg').textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 4000);
+  }
+
+  function renderPortal(data) {
+    // Stats
+    const total     = data.length;
+    const libres    = data.filter(d => d.estado === 'libre').length;
+    const ocupados  = data.filter(d => d.estado === 'ocupado').length;
+    const cancelados= data.filter(d => d.estado === 'cancelado').length;
+
+    document.getElementById('stat-total').textContent     = total;
+    document.getElementById('stat-libres').textContent    = libres;
+    document.getElementById('stat-ocupados').textContent  = ocupados;
+    document.getElementById('stat-cancelados').textContent= cancelados;
+
+    // Group by day
+    const days = {};
+    data.forEach(s => {
+      if (!days[s.fecha]) days[s.fecha] = [];
+      days[s.fecha].push(s);
+    });
+
+    const grid = document.getElementById('days-grid');
+    grid.innerHTML = '';
+
+    Object.entries(days).forEach(([fecha, slots]) => {
+      const ocupadosDay = slots.filter(s => s.estado === 'ocupado').length;
+      const col = document.createElement('div');
+      col.className = 'day-col';
+
+      const [dia, num] = fecha.split(' ');
+
+      col.innerHTML = `
+        <div class="day-header">
+          <div>
+            <div class="day-name">${dia}</div>
+            <div class="day-date">${num || ''}</div>
+          </div>
+          <div class="day-count">${ocupadosDay}/${slots.length} reservados</div>
+        </div>
+        <div class="day-slots" id="slots-${fecha.replace(/\//g,'-').replace(/ /g,'_')}"></div>
+      `;
+
+      grid.appendChild(col);
+
+      const slotsContainer = col.querySelector('.day-slots');
+      slots.forEach(s => {
+        const isNew = prevData.length > 0 &&
+          prevData.find(p => p.id === s.id && p.estado === 'libre') &&
+          s.estado === 'ocupado';
+
+        const card = document.createElement('div');
+        card.className = `slot-card ${s.estado}${isNew ? ' nuevo' : ''}`;
+
+        let badgeHtml = '';
+        let patientHtml = '';
+        let viaHtml = '';
+
+        if (s.estado === 'libre') {
+          badgeHtml = `<span class="badge badge-libre">libre</span>`;
+          patientHtml = `<div class="slot-patient libre-text">Disponible</div>`;
+        } else if (s.estado === 'ocupado') {
+          const viaLabel = s.via === 'whatsapp' ? 'WhatsApp' : 'Portal';
+          badgeHtml = s.via === 'whatsapp'
+            ? `<span class="badge badge-wa">WhatsApp</span>`
+            : `<span class="badge badge-portal">Portal</span>`;
+          patientHtml = `<div class="slot-patient">${s.paciente || '—'}</div>`;
+          viaHtml = `<div class="slot-via">vía ${viaLabel}</div>`;
+        } else {
+          badgeHtml = `<span class="badge badge-cancelado">cancelado</span>`;
+          patientHtml = `<div class="slot-patient" style="text-decoration:line-through;color:#aaa">${s.paciente || '—'}</div>`;
+          viaHtml = `<div class="slot-via">cancelado por paciente</div>`;
+        }
+
+        card.innerHTML = `
+          <div class="slot-time">${s.hora}</div>
+          <div class="slot-info">${patientHtml}${viaHtml}</div>
+          ${badgeHtml}
+        `;
+
+        slotsContainer.appendChild(card);
+      });
+    });
+  }
+</script>
+</body>
+</html>
